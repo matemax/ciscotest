@@ -1,0 +1,160 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+
+        #video-container {
+            position: relative;
+        }
+
+        #call_remote_view {
+            position: absolute;
+            top: 0px;
+            left: 640px;
+			-ms-filter: fliph; /*IE*/
+            filter: fliph; /*IE*/
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+        }
+
+        #bestShot {
+            position: absolute;
+            top: 0px;
+            left: 650px;
+            width: 180px;
+            height: 240px;
+        }
+
+        #controls {
+            position: absolute;
+            top: 50px;
+            left: 60px;
+        }
+        
+        /* current movement */
+        #exp-mov {
+	    position: absolute;
+            top: 370px;
+            left: 650px;
+        }
+
+    </style>
+</head>
+<body>
+
+
+    <div id="main">
+	<div id="call_contain"></div>
+	<video id="call_remote_view" style="display: none"></video>
+
+  
+        <div id="controls">
+            <button type="button" onclick="reset()">StartCall</button>
+        </div>
+
+    </div>
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script>
+
+
+
+</body>
+<script>
+function reset() {
+        var constraints = {
+            video: {
+                mandatory: {
+                    maxWidth: 330,
+                    maxHeight: 220
+                }
+            }
+        };
+		
+		
+	var video = document.getElementById('call_remote_view');
+
+
+
+    // Web camera video stream.
+    var localMediaStream = null;
+
+        function successCallback(stream) {
+            // Set the source of the video element with the stream from the camera
+            if (video.mozSrcObject !== undefined) {
+                video.mozSrcObject = stream;
+            } else {
+                video.src = (window.URL && window.URL.createObjectURL(stream)) || stream;
+            }
+
+            localMediaStream = stream;
+	
+            video.onloadedmetadata = function() {
+				var div = document.getElementById("call_contain"); 
+			var canvas = document.createElement('div');
+			div.appendChild(canvas);
+            };
+
+            video.play();
+			
+        }
+		        function errorCallback(error) {
+            console.error('An error occurred: [CODE ' + error.code + ']');
+        }
+			
+			 navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
+        window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+
+        // Call the getUserMedia method with our callback functions
+        if (navigator.getUserMedia) {
+            navigator.getUserMedia(constraints, successCallback, errorCallback);
+        } else {
+            console.log('Native web camera streaming (getUserMedia) not supported in this browser.');
+        }
+}
+
+
+
+function visualizeDetection(ctx, xywh, radius, color) {
+        ctx.save();
+        ctx.strokeStyle = "rgba("
+            + color[0] + ", "
+            + color[1] + ", "
+            + color[2] + ", "
+            + color[3] + ")";
+
+        ctx.lineWidth = 4;
+
+        var sx = xywh[0];
+        var sy = xywh[1];
+        var ex = sx + xywh[2];
+        var ey = sy + xywh[3];
+        var r = radius;
+
+        var r2d = Math.PI / 180;
+
+        if((ex - sx) - (2 * r) < 0) { r = ((ex - sx) / 2); } //ensure that the radius isn't too large for x
+        if((ey - sy) - (2 * r) < 0) { r = ((ey - sy) / 2); } //ensure that the radius isn't too large for y
+
+        ctx.beginPath();
+        ctx.moveTo(sx+r,sy);
+        ctx.lineTo(ex-r,sy);
+        ctx.arc(ex-r,sy+r,r,r2d*270,r2d*360,false);
+        ctx.lineTo(ex,ey-r);
+        ctx.arc(ex-r,ey-r,r,r2d*0,r2d*90,false);
+        ctx.lineTo(sx+r,ey);
+        ctx.arc(sx+r,ey-r,r,r2d*90,r2d*180,false);
+        ctx.lineTo(sx,sy+r);
+        ctx.arc(sx+r,sy+r,r,r2d*180,r2d*270,false);
+        ctx.closePath();
+
+        ctx.stroke();
+        ctx.restore();
+    }
+    
+
+</script>
+</html>
